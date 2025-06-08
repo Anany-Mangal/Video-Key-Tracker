@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Video Key Tracker</title>
+  <style>
+    :root {
+      --bg: #f0f2f5;
+      --text: #000;
+      --accent: #1a73e8;
+      --card-bg: #fff;
+    }
+    body.dark {
+      --bg: #121212;
+      --text: #f5f5f5;
+      --accent: #64b5f6;
+      --card-bg: #1e1e1e;
+    }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      transition: all 0.3s ease;
+      height: 100vh;
+      position: relative;
+    }
+    header {
+      text-align: center;
+      padding: 20px;
+      font-size: 28px;
+      font-weight: bold;
+      background-color: var(--accent);
+      color: white;
+    }
+    main {
+      display: flex;
+      padding: 20px;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 40px;
+      flex-wrap: wrap;
+    }
+    .left-panel, .right-panel {
+      width: 20%;
+      padding: 10px;
+    }
+    .center-panel {
+     text-align: center;
+     flex-grow: 1;
+     min-width: 1200px;
+    }
+    .upload-section {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    .warning {
+      margin-top: 10px;
+      color: red;
+      font-weight: bold;
+    }
+    .label-box {
+      background-color: var(--card-bg);
+      padding: 10px;
+      margin-top: 20px;
+      border-radius: 6px;
+      box-shadow: 0 0 6px rgba(0,0,0,0.1);
+    }
+    .button-group {
+      margin-top: 20px;
+    }
+    .download-btn, .toggle-theme {
+      margin: 5px;
+      padding: 8px 16px;
+      background-color: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .download-btn:hover, .toggle-theme:hover {
+      background-color: #0c5fc2;
+    }
+    select {
+      margin-left: 10px;
+      padding: 5px;
+    }
+    .credits-box {
+      bottom: 10px;
+      right: 20px;
+      background-color: var(--card-bg);
+      padding: 10px;
+      font-size: 14px;
+      border-radius: 6px;
+      box-shadow: 0 0 6px rgba(0,0,0,0.1);
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+
+  <header>Video Key Tracker</header>
+
+  <main>
+    <div class="left-panel">
+      <div class="upload-section">
+        <label><strong>Upload Video:</strong></label><br />
+        <input type="file" id="videoUpload" accept="video/*" />
+      </div>
+    </div>
+
+    <div class="center-panel">
+      <video id="videoPlayer" width="1200" height="675" controls></video>
+      <p class="warning">⚠️ Any Keypresses made during video playback will be recorded.</p>
+      <div class="button-group">
+        <label for="fileFormat"><strong>Download as:</strong></label>
+        <select id="fileFormat">
+          <option value="csv">.csv</option>
+          <option value="json">.json</option>
+          <option value="txt">.txt</option>
+        </select>
+        <button class="download-btn" id="downloadBtn">Download</button>
+        <button class="toggle-theme" id="toggleThemeBtn">Toggle Dark Mode</button>
+      </div>
+    </div>
+
+    <div class="right-panel">
+      <div class="label-box">
+      <strong>Latest Input:</strong><br />
+      <div>Key: <span id="latestKey">-</span></div>
+      <div>Time: <span id="latestTime">-</span> sec</div>
+    </div>
+
+    <div class="credits-box" style="position: static; margin-top: 20px;">
+      <strong>Credits</strong><br />
+      Name: Anany Mangal<br />
+      Roll No: B21ME005
+    </div>
+  </main>
+
+  <script>
+    const video = document.getElementById("videoPlayer");
+    const upload = document.getElementById("videoUpload");
+    const latestKey = document.getElementById("latestKey");
+    const latestTime = document.getElementById("latestTime");
+    const downloadBtn = document.getElementById("downloadBtn");
+    const fileFormat = document.getElementById("fileFormat");
+    const toggleThemeBtn = document.getElementById("toggleThemeBtn");
+
+    const pressedKeys = [];
+    const pressedTimes = [];
+
+    let videoReady = false;
+
+    // Expose to browser dev tools
+    window.recordedKeys = pressedKeys;
+    window.recordedTimestamps = pressedTimes;
+    
+    document.addEventListener("fullscreenchange", () => {
+      // Wait briefly, then focus the body
+      setTimeout(() => {
+      document.body.focus();
+      }, 100);
+    });
+
+    // Ensure body can receive focus
+    document.body.setAttribute("tabindex", "-1");
+
+    upload.addEventListener("change", function () {
+      const file = this.files[0];
+      if (file) {
+        const url = URL.createObjectURL(file);
+        video.src = url;
+        video.load();
+        videoReady = false;
+
+        video.onloadeddata = () => {
+          videoReady = true;
+          video.muted = true;
+          window.focus();
+          video.play();
+          console.log("✅ Video is ready and playing.");
+        };
+      }
+    });
+
+    video.addEventListener("play", () => {
+      window.focus();
+    });
+
+    window.addEventListener("keydown", (event) => {
+      if (!videoReady || !video.src) return;
+
+      const key = event.key;
+      const time = video.currentTime.toFixed(2);
+      
+      pressedKeys.push(key);
+      pressedTimes.push(time);
+
+      latestKey.textContent = key;
+      latestTime.textContent = time;
+
+      console.log(`🔑 Key: "${key}" at ${time}s`);
+    });
+
+    downloadBtn.addEventListener("click", () => {
+      if (pressedKeys.length === 0) {
+        alert("No data to download yet.");
+        return;
+      }
+
+      let type = fileFormat.value;
+      let content = "";
+      let filename = "keypress_log." + type;
+
+      if (type === "csv") {
+        content = "Key,Timestamp(s)\n";
+        for (let i = 0; i < pressedKeys.length; i++) {
+          content += `${pressedKeys[i]},${pressedTimes[i]}\n`;
+        }
+      } else if (type === "json") {
+        const data = pressedKeys.map((key, i) => ({ key, time: pressedTimes[i] }));
+        content = JSON.stringify(data, null, 2);
+      } else if (type === "txt") {
+        for (let i = 0; i < pressedKeys.length; i++) {
+          content += `Key: ${pressedKeys[i]} at ${pressedTimes[i]}s\n`;
+        }
+      }
+
+      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+
+    toggleThemeBtn.addEventListener("click", () => {
+      document.body.classList.toggle("dark");
+    });
+  </script>
+</body>
+</html>
