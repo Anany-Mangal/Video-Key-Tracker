@@ -2,243 +2,318 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Video Key Tracker</title>
   <style>
-    :root {
-      --bg: #f0f2f5;
-      --text: #000;
-      --accent: #1a73e8;
-      --card-bg: #fff;
-    }
-    body.dark {
-      --bg: #121212;
-      --text: #f5f5f5;
-      --accent: #64b5f6;
-      --card-bg: #1e1e1e;
-    }
     body {
-      margin: 0;
+      background-color: #121212;
+      color: #e0e0e0;
       font-family: Arial, sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      transition: all 0.3s ease;
-      height: 100vh;
-      position: relative;
-    }
-    header {
       text-align: center;
+      margin: 0;
       padding: 20px;
-      font-size: 28px;
-      font-weight: bold;
-      background-color: var(--accent);
-      color: white;
     }
-    main {
-      display: flex;
-      padding: 20px;
-      justify-content: center;
-      align-items: flex-start;
-      gap: 40px;
-      flex-wrap: wrap;
-    }
-    .left-panel, .right-panel {
-      width: 20%;
-      padding: 10px;
-    }
-    .center-panel {
-     text-align: center;
-     flex-grow: 1;
-     min-width: 1200px;
-    }
-    .upload-section {
+
+    h1 {
       margin-bottom: 20px;
-      text-align: left;
     }
-    .warning {
-      margin-top: 10px;
-      color: red;
-      font-weight: bold;
+
+    .upload-container {
+      margin-bottom: 20px;
     }
-    .label-box {
-      background-color: var(--card-bg);
-      padding: 10px;
-      margin-top: 20px;
-      border-radius: 6px;
-      box-shadow: 0 0 6px rgba(0,0,0,0.1);
+
+    #videoPlayer {
+      width: 1200px;
+      height: 675px;
+      margin: 0 auto;
+      display: block;
+      background-color: black;
     }
-    .button-group {
-      margin-top: 20px;
+
+    .controls-container {
+      max-width: 1200px;
+      margin: 10px auto;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      align-items: center;
     }
-    .download-btn, .toggle-theme {
-      margin: 5px;
-      padding: 8px 16px;
-      background-color: var(--accent);
+
+    .controls-container button {
+      padding: 8px 12px;
+      background-color: #1e1e1e;
       color: white;
       border: none;
-      border-radius: 5px;
+      border-radius: 4px;
+      cursor: pointer;
+      min-width: 60px;
+    }
+
+    .controls-container button:hover {
+      background-color: #333;
+    }
+
+    .progress-container {
+      flex: 1;
+      min-width: 300px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #progressBar {
+      flex: 1;
+      height: 5px;
       cursor: pointer;
     }
-    .download-btn:hover, .toggle-theme:hover {
-      background-color: #0c5fc2;
+
+    .time-display {
+      font-family: monospace;
+      width: 100px;
+      text-align: center;
     }
-    select {
-      margin-left: 10px;
-      padding: 5px;
+
+    .volume-container {
+      display: flex;
+      align-items: center;
+      gap: 5px;
     }
-    .credits-box {
-      bottom: 10px;
-      right: 20px;
-      background-color: var(--card-bg);
-      padding: 10px;
-      font-size: 14px;
-      border-radius: 6px;
-      box-shadow: 0 0 6px rgba(0,0,0,0.1);
-      z-index: 1000;
+
+    #volumeSlider {
+      width: 80px;
+    }
+
+    .info-section {
+      margin-top: 20px;
+      display: flex;
+      justify-content: space-between;
+      max-width: 1200px;
+      margin-left: auto;
+      margin-right: auto;
+      flex-wrap: wrap;
+    }
+
+    .labels-container {
+      text-align: left;
+    }
+
+    .credits {
+      text-align: right;
+    }
+
+    /* Hide native controls */
+    video::-webkit-media-controls {
+      display: none !important;
     }
   </style>
 </head>
-<body>
+<body tabindex="-1">
+  <h1>Video Key Tracker</h1>
 
-  <header>Video Key Tracker</header>
+  <div class="upload-container">
+    <label for="videoUpload">Upload Video: </label>
+    <input type="file" id="videoUpload" accept="video/*">
+  </div>
 
-  <main>
-    <div class="left-panel">
-      <div class="upload-section">
-        <label><strong>Upload Video:</strong></label><br />
-        <input type="file" id="videoUpload" accept="video/*" />
-      </div>
+  <video id="videoPlayer"></video>
+
+  <div class="controls-container">
+    <button id="playPauseBtn">Play</button>
+    <button id="rewindBtn">-5s</button>
+    <div class="progress-container">
+      <span class="time-display" id="currentTime">0:00</span>
+      <input type="range" id="progressBar" min="0" value="0" step="0.1">
+      <span class="time-display" id="durationTime">0:00</span>
     </div>
-
-    <div class="center-panel">
-      <video id="videoPlayer" width="1200" height="675" controls></video>
-      <p class="warning">⚠️ Any Keypresses made during video playback will be recorded.</p>
-      <div class="button-group">
-        <label for="fileFormat"><strong>Download as:</strong></label>
-        <select id="fileFormat">
-          <option value="csv">.csv</option>
-          <option value="json">.json</option>
-          <option value="txt">.txt</option>
-        </select>
-        <button class="download-btn" id="downloadBtn">Download</button>
-        <button class="toggle-theme" id="toggleThemeBtn">Toggle Dark Mode</button>
-      </div>
+    <button id="forwardBtn">+5s</button>
+    <div class="volume-container">
+      <span>Vol:</span>
+      <input type="range" id="volumeSlider" min="0" max="1" step="0.1" value="1">
     </div>
+    <button id="fullscreenBtn">Fullscreen</button>
+    <button id="darkModeBtn">Toggle Dark Mode</button>
+  </div>
 
-    <div class="right-panel">
-      <div class="label-box">
-      <strong>Latest Input:</strong><br />
-      <div>Key: <span id="latestKey">-</span></div>
-      <div>Time: <span id="latestTime">-</span> sec</div>
-    </div>
+  <p>Any Keypresses made during video playback will be recorded.</p>
 
-    <div class="credits-box" style="position: static; margin-top: 20px;">
-      <strong>Credits</strong><br />
-      Name: Anany Mangal<br />
-      Roll No: B21ME005
+  <div class="info-section">
+    <div class="labels-container">
+      <p><strong>Most Recent Timestamp:</strong> <span id="recentTime">None</span></p>
+      <p><strong>Most Recent Key:</strong> <span id="recentKey">None</span></p>
     </div>
-  </main>
+    <div class="credits">
+      <p><strong>Name:</strong> Anany Mangal</p>
+      <p><strong>Roll No:</strong> B21ME005</p>
+    </div>
+  </div>
+
+  <div style="margin-top: 20px;">
+    <label for="formatSelect">Download format:</label>
+    <select id="formatSelect">
+      <option value="csv">CSV</option>
+      <option value="json">JSON</option>
+      <option value="txt">TXT</option>
+    </select>
+    <button onclick="downloadData()">Download Data</button>
+  </div>
 
   <script>
     const video = document.getElementById("videoPlayer");
-    const upload = document.getElementById("videoUpload");
-    const latestKey = document.getElementById("latestKey");
-    const latestTime = document.getElementById("latestTime");
-    const downloadBtn = document.getElementById("downloadBtn");
-    const fileFormat = document.getElementById("fileFormat");
-    const toggleThemeBtn = document.getElementById("toggleThemeBtn");
+    const fileInput = document.getElementById("videoUpload");
+    const recentTime = document.getElementById("recentTime");
+    const recentKey = document.getElementById("recentKey");
+    const playPauseBtn = document.getElementById("playPauseBtn");
+    const rewindBtn = document.getElementById("rewindBtn");
+    const forwardBtn = document.getElementById("forwardBtn");
+    const progressBar = document.getElementById("progressBar");
+    const volumeSlider = document.getElementById("volumeSlider");
+    const fullscreenBtn = document.getElementById("fullscreenBtn");
+    const darkModeBtn = document.getElementById("darkModeBtn");
+    const currentTimeDisplay = document.getElementById("currentTime");
+    const durationTimeDisplay = document.getElementById("durationTime");
 
-    const pressedKeys = [];
-    const pressedTimes = [];
+    let keyLogs = [];
+    let isDarkMode = true;
 
-    let videoReady = false;
+    // Hide native controls
+    video.controls = false;
 
-    // Expose to browser dev tools
-    window.recordedKeys = pressedKeys;
-    window.recordedTimestamps = pressedTimes;
-    
-    document.addEventListener("fullscreenchange", () => {
-      // Wait briefly, then focus the body
-      setTimeout(() => {
-      document.body.focus();
-      }, 100);
-    });
-
-    // Ensure body can receive focus
-    document.body.setAttribute("tabindex", "-1");
-
-    upload.addEventListener("change", function () {
-      const file = this.files[0];
+    fileInput.addEventListener("change", (event) => {
+      const file = event.target.files[0];
       if (file) {
         const url = URL.createObjectURL(file);
         video.src = url;
-        video.load();
-        videoReady = false;
+        video.addEventListener('loadedmetadata', () => {
+          durationTimeDisplay.textContent = formatTime(video.duration);
+        });
+	video.controls = false;
+        video.play();
+        playPauseBtn.textContent = "Pause";
+      }
+    });
 
-        video.onloadeddata = () => {
-          videoReady = true;
-          video.muted = true;
-          window.focus();
-          video.play();
-          console.log("✅ Video is ready and playing.");
-        };
+    // Format time as MM:SS
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    }
+
+    // Custom controls
+    playPauseBtn.addEventListener("click", () => {
+      if (video.paused) {
+        video.play();
+        playPauseBtn.textContent = "Pause";
+      } else {
+        video.pause();
+        playPauseBtn.textContent = "Play";
+      }
+	windows.focus();
+    });
+
+    rewindBtn.addEventListener("click", () => {
+      video.currentTime -= 5;
+    });
+
+    forwardBtn.addEventListener("click", () => {
+      video.currentTime += 5;
+    });
+
+    progressBar.addEventListener("input", () => {
+      if (video.duration) {
+        video.currentTime = video.duration * (progressBar.value / 100);
+      }
+    });
+
+    volumeSlider.addEventListener("input", () => {
+      video.volume = volumeSlider.value;
+    });
+
+    fullscreenBtn.addEventListener("click", () => {
+      if (video.requestFullscreen) {
+        video.requestFullscreen();
+      } else if (video.webkitRequestFullscreen) {
+        video.webkitRequestFullscreen();
+      } else if (video.msRequestFullscreen) {
+        video.msRequestFullscreen();
+      }
+    });
+
+    darkModeBtn.addEventListener("click", toggleDarkMode);
+
+    video.addEventListener("timeupdate", () => {
+      if (video.duration) {
+        const progress = (video.currentTime / video.duration) * 100;
+        progressBar.value = progress;
+        currentTimeDisplay.textContent = formatTime(video.currentTime);
       }
     });
 
     video.addEventListener("play", () => {
-      window.focus();
+      playPauseBtn.textContent = "Pause";
     });
 
-    window.addEventListener("keydown", (event) => {
-      if (!videoReady || !video.src) return;
+    video.addEventListener("pause", () => {
+      playPauseBtn.textContent = "Play";
+    });
 
-      const key = event.key;
-      const time = video.currentTime.toFixed(2);
+    // Keypress tracking
+    document.addEventListener("keydown", (event) => {
+      if (video.paused) return;
       
-      pressedKeys.push(key);
-      pressedTimes.push(time);
-
-      latestKey.textContent = key;
-      latestTime.textContent = time;
-
-      console.log(`🔑 Key: "${key}" at ${time}s`);
+      const time = video.currentTime.toFixed(2);
+      keyLogs.push({ key: event.key, time });
+      recentTime.textContent = `${time} sec`;
+      recentKey.textContent = event.key;
+      
+      // Prevent default for media control keys
+      if ([' ', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+        event.preventDefault();
+        if (event.key === ' ') {
+          video.paused ? video.play() : video.pause();
+        } else if (event.key === 'ArrowLeft') {
+          video.currentTime -= 5;
+        } else if (event.key === 'ArrowRight') {
+          video.currentTime += 5;
+        }
+      }
     });
 
-    downloadBtn.addEventListener("click", () => {
-      if (pressedKeys.length === 0) {
-        alert("No data to download yet.");
-        return;
-      }
+    function toggleDarkMode() {
+      isDarkMode = !isDarkMode;
+      document.body.style.backgroundColor = isDarkMode ? "#121212" : "#f0f0f0";
+      document.body.style.color = isDarkMode ? "#e0e0e0" : "#121212";
+    }
 
-      let type = fileFormat.value;
+    function downloadData() {
+      const format = document.getElementById("formatSelect").value;
       let content = "";
-      let filename = "keypress_log." + type;
+      let mime = "text/plain";
+      let extension = "txt";
 
-      if (type === "csv") {
-        content = "Key,Timestamp(s)\n";
-        for (let i = 0; i < pressedKeys.length; i++) {
-          content += `${pressedKeys[i]},${pressedTimes[i]}\n`;
-        }
-      } else if (type === "json") {
-        const data = pressedKeys.map((key, i) => ({ key, time: pressedTimes[i] }));
-        content = JSON.stringify(data, null, 2);
-      } else if (type === "txt") {
-        for (let i = 0; i < pressedKeys.length; i++) {
-          content += `Key: ${pressedKeys[i]} at ${pressedTimes[i]}s\n`;
-        }
+      if (format === "csv") {
+        content = "Key,Timestamp\n" + keyLogs.map(log => `${log.key},${log.time}`).join("\n");
+        mime = "text/csv";
+        extension = "csv";
+      } else if (format === "json") {
+        content = JSON.stringify(keyLogs, null, 2);
+        mime = "application/json";
+        extension = "json";
+      } else if (format === "txt") {
+        content = keyLogs.map(log => `Key: ${log.key}, Time: ${log.time}`).join("\n");
+        mime = "text/plain";
+        extension = "txt";
       }
 
-      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    });
-
-    toggleThemeBtn.addEventListener("click", () => {
-      document.body.classList.toggle("dark");
-    });
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `key_logs.${extension}`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
   </script>
 </body>
 </html>
