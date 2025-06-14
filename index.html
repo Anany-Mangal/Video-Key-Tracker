@@ -109,6 +109,17 @@
   </style>
 </head>
 <body tabindex="-1">
+  <div id="namePrompt" style="position: fixed; top: 0; left: 0; 
+    width: 100%; height: 100%; background: #121212; color: #e0e0e0;
+    display: flex; align-items: center; justify-content: center; z-index: 9999;">
+    <div style="text-align: center;">
+      <h2>Please Enter Your Name</h2>
+      <input type="text" id="userNameInput" placeholder="Your name..." style="padding: 10px; font-size: 16px;">
+      <br><br>
+      <button onclick="submitName()" style="padding: 10px 20px; font-size: 16px;">Enter</button>
+    </div>
+  </div>
+
   <h1>Video Key Tracker</h1>
 
   <div class="upload-container">
@@ -175,6 +186,7 @@
 
     let keyLogs = [];
     let isDarkMode = true;
+    let userName = "";
 
     // Hide native controls
     video.controls = false;
@@ -291,28 +303,44 @@
       let content = "";
       let mime = "text/plain";
       let extension = "txt";
+      const header = `Name: ${userName}\nDate: ${new Date().toLocaleString()}\n\n`;
 
       if (format === "csv") {
-        content = "Key,Timestamp\n" + keyLogs.map(log => `${log.key},${log.time}`).join("\n");
+        content = header + "Key,Timestamp\n" + keyLogs.map(log => `${log.key},${log.time}`).join("\n");
         mime = "text/csv";
         extension = "csv";
       } else if (format === "json") {
-        content = JSON.stringify(keyLogs, null, 2);
-        mime = "application/json";
-        extension = "json";
+        const data = {
+        name: userName,
+        date: new Date().toISOString(),
+        logs: keyLogs
+      };
+      content = JSON.stringify(data, null, 2);
+      mime = "application/json";
+      extension = "json";
       } else if (format === "txt") {
-        content = keyLogs.map(log => `Key: ${log.key}, Time: ${log.time}`).join("\n");
+        content = header + keyLogs.map(log => `Key: ${log.key}, Time: ${log.time}`).join("\n");
         mime = "text/plain";
         extension = "txt";
-      }
+    }
 
-      const blob = new Blob([content], { type: mime });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `key_logs.${extension}`;
-      a.click();
-      URL.revokeObjectURL(url);
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `key_logs_${userName.replace(/\s+/g, '_')}.${extension}`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+    function submitName() {
+      const input = document.getElementById("userNameInput").value.trim();
+      if (input === "") {
+        alert("Please enter your name.");
+        return;
+      }
+    userName = input;
+    document.getElementById("namePrompt").style.display = "none";
     }
   </script>
 </body>
